@@ -1,0 +1,16 @@
+{
+  "vendor": "kontinent",
+  "version": "v1",
+  "objects": {
+    "any": { "type": "any" },
+    "net_internal": { "type": "network", "value": "10.10.0.0/24" }
+  },
+  "services": {
+    "any": { "type": "any" },
+    "http": { "type": "service", "proto": "tcp", "dst_ports": [80] }
+  },
+  "rules": [
+    { "id": "R1", "order": 1, "action": "deny", "src": ["any"], "dst": ["any"], "service": ["any"], "log": true, "enabled": true },
+    { "id": "R2", "order": 2, "action": "allow", "src": ["net_internal"], "dst": ["any"], "service": ["http"], "log": true, "enabled": true }
+  ]
+}

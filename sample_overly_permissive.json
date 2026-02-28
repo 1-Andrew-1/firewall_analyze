@@ -1,0 +1,9 @@
+{
+  "vendor": "kontinent",
+  "version": "v1",
+  "objects": { "any": { "type": "any" } },
+  "services": { "any": { "type": "any" } },
+  "rules": [
+    { "id": "R1", "order": 1, "action": "allow", "src": ["any"], "dst": ["any"], "service": ["any"], "log": false, "enabled": true }
+  ]
+}

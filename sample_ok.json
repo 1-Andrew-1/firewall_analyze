@@ -1,0 +1,24 @@
+[
+  {
+    "name": "FW_ALLOW_DNS",
+    "description": "",
+    "is_enabled": true,
+    "rule_action": "pass",
+    "src": [
+      { "name": "LAN_192.168.10.0_24", "description": "", "type": "netobject", "ip": "192.168.10.0/24" }
+    ],
+    "dst": [
+      { "name": "DNS_8.8.8.8", "description": "", "type": "netobject", "ip": "8.8.8.8" }
+    ],
+    "service": [
+      { "name": "DNS_UDP", "description": "", "type": "service", "proto": 17, "src": "", "dst": "53", "requires_keep_connections": false }
+    ],
+    "params": [],
+    "install_on": [],
+    "passips": false,
+    "rule_applications": [],
+    "is_inverse_src": false,
+    "is_inverse_dst": false,
+    "logging": true
+  }
+]
