@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Отчёт #{{ r.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="page-title mb-1">
+      <i class="bi bi-file-text"></i>
+      Отчёт #{{ r.id }}
+    </h1>
+    <div class="page-subtitle text-muted">
+      Дата: {{ r.created_at|date:"d.m.Y H:i" }}
+      {% if r.snapshot_id %}
+        · Снапшот:
+        <a href="{% url 'snapshot_detail' r.snapshot_id %}">#{{ r.snapshot_id }}</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'export_report_json' r.id %}">
+      <i class="bi bi-braces"></i> JSON
+    </a>
+    <a class="btn btn-outline-primary" href="{% url 'reports' %}">
+      <i class="bi bi-arrow-left"></i> К списку
+    </a>
+  </div>
+</div>
+
+<div class="app-card mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <div class="text-muted small">FilterRules</div>
+        <div class="fw-semibold">{{ r.summary.fw_rules|default:"0" }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">NatRules</div>
+        <div class="fw-semibold">{{ r.summary.nat_rules|default:"0" }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">Аномалии</div>
+        <div class="fw-semibold">{{ r.anomalies.count }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">Итого</div>
+        <div class="fw-semibold">{{ r.summary.anomalies_total|default:r.anomalies.count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-card">
+  <div class="card-body">
+    <h5 class="mb-3"><i class="bi bi-exclamation-triangle"></i> Список аномалий</h5>
+
+    {% if anomalies %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th width="80">Scope</th>
+              <th width="90">Rule</th>
+              <th>Название</th>
+              <th width="110">Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in anomalies %}
+            <tr>
+              <td><span class="badge bg-secondary">{{ a.scope }}</span></td>
+              <td class="text-muted">
+                {% if a.rule_index != None %}
+                  #{{ a.rule_index }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                <div class="fw-semibold">{{ a.title }}</div>
+                {% if a.rule_name %}
+                  <div class="text-muted small">rule: {{ a.rule_name }}</div>
+                {% endif %}
+                {% if a.description %}
+                  <div class="text-muted small mt-1">{{ a.description }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if a.severity == "critical" %}
+                  <span class="badge bg-danger">critical</span>
+                {% elif a.severity == "high" %}
+                  <span class="badge bg-warning text-dark">high</span>
+                {% elif a.severity == "medium" %}
+                  <span class="badge bg-primary">medium</span>
+                {% else %}
+                  <span class="badge bg-light text-dark border">low</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-muted">Аномалии не обнаружены.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

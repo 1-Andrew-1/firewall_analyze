@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">FilterRules · Снапшот #{{ snapshot.id }}</h2>
+    <div class="d-flex gap-2">
+      <a class="btn btn-success" href="/snapshot/{{ snapshot.id }}/analyze/">Анализ</a>
+      <a class="btn btn-outline-secondary" href="/snapshot/{{ snapshot.id }}/">Назад</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <pre class="mb-0" style="max-height: 70vh; overflow:auto;"><code>{{ json_text|escape }}</code></pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

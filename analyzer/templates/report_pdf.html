@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .summary { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .risk-score { font-size: 24px; font-weight: bold; color: #28a745; }
+        .risk-critical { color: #dc3545; }
+        .risk-poor { color: #fd7e14; }
+        .risk-fair { color: #ffc107; }
+        .risk-good { color: #20c997; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .critical { background-color: #f8d7da; }
+        .warning { background-color: #fff3cd; }
+        .info { background-color: #d1ecf1; }
+        .footer { margin-top: 30px; text-align: center; color: #6c757d; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Отчет анализа безопасности</h1>
+        <p>Сгенерировано: {% now "d.m.Y H:i" %}</p>
+    </div>
+
+    <div class="summary">
+        <h2>Общая информация</h2>
+        <p><strong>Файл конфигурации:</strong> {{ report.config.filename }}</p>
+        <p><strong>Дата создания отчета:</strong> {{ report.created_at|date:"d.m.Y H:i" }}</p>
+        {% if report.security_score %}
+        <p><strong>Общая оценка безопасности:</strong> 
+            <span class="risk-score 
+                {% if report.security_score >= 90 %}risk-good
+                {% elif report.security_score >= 75 %}risk-fair
+                {% elif report.security_score >= 60 %}risk-poor
+                {% else %}risk-critical{% endif %}">
+                {{ report.security_score }}%
+            </span>
+        </p>
+        <p><strong>Уровень риска:</strong> {{ report.risk_level|upper }}</p>
+        {% endif %}
+    </div>
+
+    {% if anomalies %}
+    <h2>Обнаруженные аномалии ({{ anomalies|length }})</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Тип</th>
+                <th>Описание</th>
+                <th>Правила</th>
+                <th>Критичность</th>
+                <th>Оценка риска</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for anomaly in anomalies %}
+            <tr class="{{ anomaly.level }}">
+                <td>{{ anomaly.type }}</td>
+                <td>{{ anomaly.description }}</td>
+                <td>{{ anomaly.related_rules }}</td>
+                <td>
+                    {% if anomaly.level == "critical" %}Критично
+                    {% elif anomaly.level == "warning" %}Внимание
+                    {% else %}Инфо{% endif %}
+                </td>
+                <td>{{ anomaly.risk_score }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Аномалий не обнаружено.</p>
+    {% endif %}
+
+    <div class="footer">
+        <p>Сгенерировано системой Firewall Analyzer</p>
+    </div>
+</body>
+</html>

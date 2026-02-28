@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+<style>
+    .code-container {
+        background: #1a1a1a;
+        border-radius: 8px;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid #2d2d2d;
+        box-shadow: var(--card-shadow);
+    }
+
+    .file-header {
+        background: #2d2d2d;
+        padding: 12px 20px;
+        border-bottom: 1px solid #3d3d3d;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .file-name {
+        color: #e6e6e6;
+        font-weight: 500;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        min-width: 0;
+    }
+
+    .file-name span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 70vw;
+    }
+
+    .file-stats {
+        color: #999;
+        font-size: 12px;
+        display: flex;
+        gap: 15px;
+        flex-shrink: 0;
+    }
+
+    /* КЛЮЧ: один общий скролл для номера строк + кода */
+    .code-scroll {
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        max-height: 600px;
+        overflow: auto;
+    }
+
+    .line-numbers {
+        padding: 20px 10px;
+        background: #252525;
+        color: #666;
+        text-align: right;
+        user-select: none;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        border-right: 1px solid #333;
+        white-space: pre;
+    }
+
+    .code-pre {
+        margin: 0;
+        padding: 20px;
+        background: transparent;
+        color: #e6e6e6;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre;
+    }
+
+    /* highlight.js: фон пусть остаётся у контейнера */
+    pre code.hljs {
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .action-buttons {
+        background: #2d2d2d;
+        padding: 12px 20px;
+        border-top: 1px solid #3d3d3d;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn-code {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #e6e6e6;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-code:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+    .btn-code:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="h4 mb-1"><i class="bi bi-code-slash me-2"></i>Просмотр конфигурации</h2>
+                <p class="text-muted mb-0">Отображение загруженного JSON</p>
+            </div>
+            {% if config %}
+            <div class="d-flex gap-2">
+                <a href="/analyze/?config_id={{ config.id }}" class="btn btn-primary">
+                    <i class="bi bi-play-circle me-1"></i>Анализировать
+                </a>
+                <a href="/upload/" class="btn btn-outline-secondary">
+                    <i class="bi bi-upload me-1"></i>Загрузить другой
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if config_text %}
+        <div class="code-container">
+            <div class="file-header">
+                <div class="file-name">
+                    <i class="bi bi-filetype-json me-2"></i>
+                    <span>{% if config %}{{ config.filename }}{% else %}config.json{% endif %}</span>
+                </div>
+                <div class="file-stats">
+                    <span><i class="bi bi-text-left me-1"></i><span id="lineCount">0</span> строк</span>
+                    <span><i class="bi bi-hash me-1"></i>{{ config_text|length }} символов</span>
+                </div>
+            </div>
+
+            <div class="code-scroll" id="codeScroll">
+                <div class="line-numbers" id="lineNumbers"></div>
+                <pre class="code-pre mb-0"><code id="configCode" class="language-json">{{ config_text|escape }}</code></pre>
+            </div>
+
+            <div class="action-buttons">
+                <div class="d-flex gap-2">
+                    <button class="btn-code" id="copyBtn" type="button">
+                        <i class="bi bi-clipboard me-1"></i>Копировать
+                    </button>
+                    <button class="btn-code" id="wrapBtn" type="button">
+                        <i class="bi bi-text-wrap me-1"></i>Перенос строк
+                    </button>
+                </div>
+                <small class="text-muted">Подсветка синтаксиса: highlight.js</small>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-file-earmark-x display-4 text-muted mb-3"></i>
+                <h5>Нет загруженной конфигурации</h5>
+                <p class="text-muted">Сначала загрузите JSON файл конфигурации</p>
+                <a href="/upload/" class="btn btn-primary">
+                    <i class="bi bi-upload me-1"></i>Загрузить конфигурацию
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const codeEl = document.getElementById('configCode');
+        const lineNumbersEl = document.getElementById('lineNumbers');
+        const lineCountEl = document.getElementById('lineCount');
+        const copyBtn = document.getElementById('copyBtn');
+        const wrapBtn = document.getElementById('wrapBtn');
+
+        if (codeEl) {
+            hljs.highlightElement(codeEl);
+        }
+
+        function generateLineNumbers() {
+            if (!codeEl || !lineNumbersEl || !lineCountEl) return;
+
+            const text = codeEl.innerText || '';
+            const lines = text.split('\n').length;
+
+            lineCountEl.textContent = lines;
+
+            let nums = '';
+            for (let i = 1; i <= lines; i++) nums += i + '\n';
+            lineNumbersEl.textContent = nums;
+        }
+
+        generateLineNumbers();
+        window.addEventListener('resize', generateLineNumbers);
+
+        if (copyBtn && codeEl) {
+            copyBtn.addEventListener('click', async () => {
+                const text = codeEl.innerText || '';
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyBtn.innerHTML = '<i class="bi bi-check2 me-1"></i>Скопировано';
+                    setTimeout(() => copyBtn.innerHTML = '<i class="bi bi-clipboard me-1"></i>Копировать', 900);
+                } catch (e) {
+                    // fallback
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+            });
+        }
+
+        let wordWrapEnabled = false;
+        if (wrapBtn) {
+            wrapBtn.addEventListener('click', () => {
+                const pre = document.querySelector('.code-pre');
+                wordWrapEnabled = !wordWrapEnabled;
+
+                if (wordWrapEnabled) {
+                    pre.style.whiteSpace = 'pre-wrap';
+                    pre.style.wordBreak = 'break-word';
+                    wrapBtn.innerHTML = '<i class="bi bi-text-paragraph me-1"></i>Без переноса';
+                } else {
+                    pre.style.whiteSpace = 'pre';
+                    pre.style.wordBreak = 'normal';
+                    wrapBtn.innerHTML = '<i class="bi bi-text-wrap me-1"></i>Перенос строк';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

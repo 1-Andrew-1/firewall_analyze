@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Снапшоты{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="h4 mb-1"><i class="bi bi-archive me-2"></i>Снапшоты конфигураций</h2>
+    <div class="text-muted">История загруженных .c4b и извлечённых наборов FilterRules/NatRules.</div>
+  </div>
+  <a href="/upload/" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Новый снапшот
+  </a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-list-ul me-2"></i>Список</span>
+    <span class="badge bg-light text-dark">{{ snapshots|length }} шт.</span>
+  </div>
+
+  <div class="card-body">
+    {% if snapshots %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th width="90">ID</th>
+              <th>Файл</th>
+              <th width="180">Дата</th>
+              <th width="120">FW</th>
+              <th width="120">NAT</th>
+              <th width="130">Статус</th>
+              <th width="180" class="text-center">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in snapshots %}
+            {# скрытая форма удаления, чтобы кнопка была прямым ребенком btn-group #}
+            <form id="deleteSnapshotForm{{ s.id }}" method="post" action="{% url 'snapshot_delete' s.id %}" class="d-none">
+              {% csrf_token %}
+            </form>
+
+            <tr>
+              <td class="fw-semibold">#{{ s.id }}</td>
+              <td>
+                <div class="fw-semibold">
+                  {{ s.original_filename|default:s.filename }}
+                </div>
+                {% if s.version %}
+                  <small class="text-muted">version: {{ s.version }}</small>
+                {% endif %}
+              </td>
+              <td>{{ s.created_at|date:"d.m.Y H:i" }}</td>
+              <td>
+                <span class="badge bg-primary">{{ s.policy_rules_count|default:"0" }}</span>
+              </td>
+              <td>
+                <span class="badge bg-info text-dark">{{ s.nat_rules_count|default:"0" }}</span>
+              </td>
+              <td>
+                {% if s.status == "ready" %}
+                  <span class="badge bg-success">готово</span>
+                {% elif s.status == "error" %}
+                  <span class="badge bg-danger">ошибка</span>
+                {% else %}
+                  <span class="badge bg-secondary">в процессе</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Действия">
+                  <a class="btn btn-outline-primary" href="{% url 'snapshot_detail' s.id %}" title="Открыть">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a class="btn btn-outline-success" href="{% url 'snapshot_analyze' s.id %}" title="Анализировать">
+                    <i class="bi bi-play-circle"></i>
+                  </a>
+                  <button
+                    class="btn btn-outline-danger"
+                    type="submit"
+                    form="deleteSnapshotForm{{ s.id }}"
+                    title="Удалить"
+                    onclick="return confirm('Удалить снапшот #{{ s.id }}?');"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-archive display-4 text-muted mb-3"></i>
+        <h5 class="text-muted">Снапшотов пока нет</h5>
+        <p class="text-muted">Загрузите .c4b, чтобы создать первый снапшот</p>
+        <a href="/upload/" class="btn btn-primary">
+          <i class="bi bi-upload me-1"></i>Загрузить .c4b
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Снапшот #{{ snapshot.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  .json-box {
+    background:#0f172a;
+    color:#e2e8f0;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.08);
+    padding:12px;
+    max-height:520px;
+    overflow:auto;
+    white-space:pre;
+  }
+  .small-badge { font-size: .80rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="h4 mb-1"><i class="bi bi-archive me-2"></i>Снапшот #{{ snapshot.id }}</h2>
+    <div class="text-muted">
+      {{ snapshot.original_filename }} • {{ snapshot.created_at|date:"d.m.Y H:i" }}
+      {% if snapshot.version %} • version: {{ snapshot.version }}{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/snapshot/{{ snapshot.id }}/analyze/" class="btn btn-primary">
+      <i class="bi bi-play-circle me-1"></i>Анализировать
+    </a>
+    <a href="/snapshots/" class="btn btn-outline-secondary">
+      <i class="bi bi-list-ul me-1"></i>К списку
+    </a>
+  </div>
+</div>
+
+{% if snapshot.status == "error" and snapshot.parse_messages %}
+  <div class="alert alert-danger">
+    <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle me-2"></i>Ошибки извлечения</div>
+    <ul class="mb-0">
+      {% for m in snapshot.parse_messages %}
+        <li class="mono">{{ m }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<div class="card shadow-sm">
+  <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-diagram-3 me-2"></i>Данные снапшота</span>
+    <div class="d-flex gap-2">
+      <span class="badge bg-primary small-badge">FW: {{ filter_rules|length }}</span>
+      <span class="badge bg-info text-dark small-badge">NAT: {{ nat_rules|length }}</span>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <ul class="nav nav-tabs" id="snapshotTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="fw-tab" data-bs-toggle="tab" data-bs-target="#fw" type="button" role="tab">
+          <i class="bi bi-shield-check me-1"></i>FilterRules
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="nat-tab" data-bs-toggle="tab" data-bs-target="#nat" type="button" role="tab">
+          <i class="bi bi-arrow-left-right me-1"></i>NatRules
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content pt-3">
+      <!-- FW TAB -->
+      <div class="tab-pane fade show active" id="fw" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="text-muted">Правила фильтрации (формат импорта/экспорта КОНТИНЕНТ).</div>
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#fwJson">
+            <i class="bi bi-braces me-1"></i>Показать JSON
+          </button>
+        </div>
+
+        {% if filter_rules %}
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th width="60">#</th>
+                  <th>name</th>
+                  <th width="110">action</th>
+                  <th width="110">enabled</th>
+                  <th>src</th>
+                  <th>dst</th>
+                  <th>service</th>
+                  <th width="90">logging</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in filter_rules %}
+                <tr>
+                  <td class="fw-semibold">{{ forloop.counter }}</td>
+                  <td class="mono">{{ r.name }}</td>
+                  <td><span class="badge {% if r.rule_action == 'pass' %}bg-success{% else %}bg-danger{% endif %}">{{ r.rule_action }}</span></td>
+                  <td>{% if r.is_enabled %}<span class="badge bg-success">true</span>{% else %}<span class="badge bg-secondary">false</span>{% endif %}</td>
+                  <td class="mono">{{ r.src|default:"[]" }}</td>
+                  <td class="mono">{{ r.dst|default:"[]" }}</td>
+                  <td class="mono">{{ r.service|default:"[]" }}</td>
+                  <td>{% if r.logging %}<i class="bi bi-check2 text-success"></i>{% else %}<i class="bi bi-x text-muted"></i>{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>FilterRules не извлечены (пусто).
+          </div>
+        {% endif %}
+
+        <div class="collapse mt-3" id="fwJson">
+          <div class="json-box mono">{{ filter_rules_json|default:"[]" }}</div>
+        </div>
+      </div>
+
+      <!-- NAT TAB -->
+      <div class="tab-pane fade" id="nat" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="text-muted">Правила NAT (формат импорта/экспорта КОНТИНЕНТ).</div>
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#natJson">
+            <i class="bi bi-braces me-1"></i>Показать JSON
+          </button>
+        </div>
+
+        {% if nat_rules %}
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th width="60">#</th>
+                  <th>name</th>
+                  <th width="120">nat_type</th>
+                  <th width="110">enabled</th>
+                  <th>src</th>
+                  <th>dst</th>
+                  <th>service</th>
+                  <th>value</th>
+                  <th>port_value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in nat_rules %}
+                <tr>
+                  <td class="fw-semibold">{{ forloop.counter }}</td>
+                  <td class="mono">{{ r.name }}</td>
+                  <td><span class="badge bg-dark">{{ r.nat_type }}</span></td>
+                  <td>{% if r.is_enabled %}<span class="badge bg-success">true</span>{% else %}<span class="badge bg-secondary">false</span>{% endif %}</td>
+                  <td class="mono">{{ r.src|default:"[]" }}</td>
+                  <td class="mono">{{ r.dst|default:"[]" }}</td>
+                  <td class="mono">{{ r.service|default:"[]" }}</td>
+                  <td class="mono">{{ r.value|default:"[]" }}</td>
+                  <td class="mono">{{ r.port_value|default:"[]" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>NatRules не извлечены (пусто).
+          </div>
+        {% endif %}
+
+        <div class="collapse mt-3" id="natJson">
+          <div class="json-box mono">{{ nat_rules_json|default:"[]" }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

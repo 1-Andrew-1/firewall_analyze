@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Анализ снапшота #{{ snapshot.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="h4 mb-1"><i class="bi bi-play-circle me-2"></i>Анализ снапшота #{{ snapshot.id }}</h2>
+    <div class="text-muted">{{ snapshot.original_filename }} • {{ snapshot.created_at|date:"d.m.Y H:i" }}</div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/snapshot/{{ snapshot.id }}/" class="btn btn-outline-secondary">
+      <i class="bi bi-eye me-1"></i>Открыть снапшот
+    </a>
+    <a href="/snapshots/" class="btn btn-outline-secondary">
+      <i class="bi bi-list-ul me-1"></i>Список
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white">
+        <i class="bi bi-speedometer me-2"></i>Метрики
+      </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Оценка</span>
+          <span class="fw-semibold">{{ results.security_metrics.security_score|default:"—" }}</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Риск</span>
+          <span class="fw-semibold">{{ results.security_metrics.risk_level|default:"—" }}</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Policy аномалии</span>
+          <span class="fw-semibold">{{ results.policy_anomalies|length }}</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">NAT аномалии</span>
+          <span class="fw-semibold">{{ results.nat_anomalies|length }}</span>
+        </div>
+
+        <div class="mt-3 d-grid gap-2">
+          <form method="post" action="/snapshot/{{ snapshot.id }}/report/save/">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i>Сохранить отчёт
+            </button>
+          </form>
+          <a class="btn btn-outline-success" href="/snapshot/{{ snapshot.id }}/report/export/json/">
+            <i class="bi bi-download me-1"></i>Экспорт результата (JSON)
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white">
+        <i class="bi bi-exclamation-triangle me-2"></i>Аномалии
+      </div>
+      <div class="card-body">
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#a-policy" type="button">
+              Policy (FW) <span class="badge bg-primary ms-1">{{ results.policy_anomalies|length }}</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#a-nat" type="button">
+              NAT <span class="badge bg-info text-dark ms-1">{{ results.nat_anomalies|length }}</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content pt-3">
+          <div class="tab-pane fade show active" id="a-policy">
+            {% if results.policy_anomalies %}
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th width="140">Severity</th>
+                      <th>Тип</th>
+                      <th>Описание</th>
+                      <th width="220">Правила</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in results.policy_anomalies %}
+                    <tr>
+                      <td>
+                        {% if a.level == "critical" %}<span class="badge bg-danger">critical</span>
+                        {% elif a.level == "warning" %}<span class="badge bg-warning text-dark">warning</span>
+                        {% else %}<span class="badge bg-info text-dark">info</span>{% endif %}
+                      </td>
+                      <td class="fw-semibold">{{ a.type }}</td>
+                      <td class="text-muted">{{ a.description }}</td>
+                      <td><code>{{ a.related_rules }}</code></td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="alert alert-success mb-0">
+                <i class="bi bi-check-circle me-2"></i>Policy аномалий не обнаружено.
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="tab-pane fade" id="a-nat">
+            {% if results.nat_anomalies %}
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th width="140">Severity</th>
+                      <th>Тип</th>
+                      <th>Описание</th>
+                      <th width="220">Правила</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in results.nat_anomalies %}
+                    <tr>
+                      <td>
+                        {% if a.level == "critical" %}<span class="badge bg-danger">critical</span>
+                        {% elif a.level == "warning" %}<span class="badge bg-warning text-dark">warning</span>
+                        {% else %}<span class="badge bg-info text-dark">info</span>{% endif %}
+                      </td>
+                      <td class="fw-semibold">{{ a.type }}</td>
+                      <td class="text-muted">{{ a.description }}</td>
+                      <td><code>{{ a.related_rules }}</code></td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="alert alert-success mb-0">
+                <i class="bi bi-check-circle me-2"></i>NAT аномалий не обнаружено.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
